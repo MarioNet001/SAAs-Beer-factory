@@ -1,0 +1,13 @@
+app = "beer-management"
+primary_region = "eze" # Ejemplo, ajustá según necesites
+
+[build]
+  # Configurar el buildpack o dockerfile acá
+  # dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
