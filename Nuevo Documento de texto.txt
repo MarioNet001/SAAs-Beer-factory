@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: beer-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: beer_db
+    ports:
+      - "5432:5432"
+  
+  api:
+    build: .
+    container_name: beer-api
+    environment:
+      DB_URL: "postgres://user:password@db:5432/beer_db?sslmode=disable"
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db

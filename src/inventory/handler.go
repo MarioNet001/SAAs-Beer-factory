@@ -20,3 +20,11 @@ func (h *Handler) HandleAddStock(ctx context.Context, itemID string, amount floa
 	}
 	return nil
 }
+
+func (h *Handler) HandleAdjustStock(ctx context.Context, itemID string, amount float64) error {
+	err := h.service.AdjustStock(ctx, itemID, amount)
+	if err != nil {
+		return fmt.Errorf("error handling adjust stock: %w", err)
+	}
+	return nil
+}

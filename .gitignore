@@ -1,0 +1,28 @@
+# Binaries
+main
+bin/
+
+# Environment
+.env
+*.env
+
+# DB
+*.db
+*.sqlite
+data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+tmp/
+
+# Go specific
+*.test
+coverage.out
+
+# IDE/Editors
+.vscode/
+.idea/
