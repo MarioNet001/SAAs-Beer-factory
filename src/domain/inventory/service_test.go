@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"context"
 	"errors"
 	"testing"
 )
@@ -23,7 +24,7 @@ func TestInventoryService_AdjustStock(t *testing.T) {
 	tests := []struct {
 		name       string
 		productID  string
-		amount     int
+		amount     float64
 		mockGet    func(productID string) (*ProductInventory, error)
 		mockUpdate func(inventory *ProductInventory) error
 		wantErr    bool
@@ -31,7 +32,7 @@ func TestInventoryService_AdjustStock(t *testing.T) {
 		{
 			name:      "success - add stock",
 			productID: "p1",
-			amount:    10,
+			amount:    10.0,
 			mockGet: func(productID string) (*ProductInventory, error) {
 				return &ProductInventory{ProductID: "p1", StockLevel: 20, MinimumThreshold: 5}, nil
 			},
@@ -46,7 +47,7 @@ func TestInventoryService_AdjustStock(t *testing.T) {
 		{
 			name:      "success - consume stock",
 			productID: "p1",
-			amount:    -5,
+			amount:    -5.0,
 			mockGet: func(productID string) (*ProductInventory, error) {
 				return &ProductInventory{ProductID: "p1", StockLevel: 20, MinimumThreshold: 5}, nil
 			},
@@ -61,7 +62,7 @@ func TestInventoryService_AdjustStock(t *testing.T) {
 		{
 			name:      "error - insufficient stock",
 			productID: "p1",
-			amount:    -25,
+			amount:    -25.0,
 			mockGet: func(productID string) (*ProductInventory, error) {
 				return &ProductInventory{ProductID: "p1", StockLevel: 20, MinimumThreshold: 5}, nil
 			},
@@ -73,7 +74,7 @@ func TestInventoryService_AdjustStock(t *testing.T) {
 		{
 			name:      "error - repo get fails",
 			productID: "p1",
-			amount:    10,
+			amount:    10.0,
 			mockGet: func(productID string) (*ProductInventory, error) {
 				return nil, errors.New("db error")
 			},
@@ -91,7 +92,7 @@ func TestInventoryService_AdjustStock(t *testing.T) {
 				UpdateFunc: tt.mockUpdate,
 			}
 			service := NewInventoryService(repo)
-			err := service.AdjustStock(tt.productID, tt.amount)
+			err := service.AdjustStock(context.Background(), tt.productID, tt.amount)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AdjustStock() error = %v, wantErr %v", err, tt.wantErr)
