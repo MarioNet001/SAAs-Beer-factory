@@ -47,6 +47,7 @@ Este proyecto utiliza un flujo de trabajo profesional basado en Pull Requests:
 ## Módulos Implementados
 - **Inventario (FR-04):** Gestión de stock, auditoría y validación transaccional.
 - **Recetas (FR-01):** Catálogo de recetas, versionado y validación de ingredientes.
+- **Gestión de Lotes (FR-02):** Tracking del ciclo de vida del lote (Brewing, Fermenting, etc.) y snapshotting de recetas.
 
 ---
 *Licencia MIT*
