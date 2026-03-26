@@ -53,7 +53,47 @@ func (r *recipeRepo) Save(ctx context.Context, recipe *recipe.Recipe) error {
 }
 
 func (r *recipeRepo) GetByID(ctx context.Context, id string) (*recipe.Recipe, error) {
-	return nil, fmt.Errorf("GetByID not implemented")
+	queryRecipe := `SELECT id, name, style, version, created_at FROM recipes WHERE id = $1`
+	var rec recipe.Recipe
+	err := r.db.QueryRowContext(ctx, queryRecipe, id).Scan(&rec.ID, &rec.Name, &rec.Description, &rec.Version, &rec.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recipe: %w", err)
+	}
+
+	queryStages := `SELECT id, name, sequence_order FROM recipe_stages WHERE recipe_id = $1 ORDER BY sequence_order`
+	rows, err := r.db.QueryContext(ctx, queryStages, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get stages: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var stage recipe.RecipeStage
+		err := rows.Scan(&stage.ID, &stage.Name, &stage.Order)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan stage: %w", err)
+		}
+
+		queryIngredients := `SELECT id, inventory_product_id, quantity, unit FROM recipe_ingredients WHERE recipe_stage_id = $1`
+		ingRows, err := r.db.QueryContext(ctx, queryIngredients, stage.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get ingredients: %w", err)
+		}
+
+		for ingRows.Next() {
+			var ing recipe.RecipeIngredient
+			err := ingRows.Scan(&ing.ID, &ing.ProductID, &ing.Quantity, &ing.UnitOfMeasure)
+			if err != nil {
+				ingRows.Close()
+				return nil, fmt.Errorf("failed to scan ingredient: %w", err)
+			}
+			stage.Ingredients = append(stage.Ingredients, ing)
+		}
+		ingRows.Close()
+		rec.Stages = append(rec.Stages, stage)
+	}
+
+	return &rec, nil
 }
 
 func (r *recipeRepo) List(ctx context.Context) ([]*recipe.Recipe, error) {

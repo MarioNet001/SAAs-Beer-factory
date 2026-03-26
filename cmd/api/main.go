@@ -8,9 +8,11 @@ import (
 	"os"
 
 	_ "github.com/lib/pq"
+	batchapi "sistema-gestion-beer/src/batch"
+	"sistema-gestion-beer/src/domain/batch"
+	"sistema-gestion-beer/src/domain/inventory"
 	"sistema-gestion-beer/src/domain/recipe"
 	"sistema-gestion-beer/src/infrastructure/db/postgres"
-	"sistema-gestion-beer/src/inventory"
 	recipeapi "sistema-gestion-beer/src/recipe"
 )
 
@@ -30,13 +32,19 @@ func main() {
 		log.Fatalf("failed to ping database: %v", err)
 	}
 
+	// Inventory
 	invRepo := postgres.NewInventoryRepo(db)
-	service := inventory.NewInventoryService(invRepo, db)
-	handler := inventory.NewHandler(service)
+	invService := inventory.NewInventoryService(invRepo)
 
+	// Recipes
 	recipeRepo := postgres.NewRecipeRepo(db)
-	recipeService := recipe.NewRecipeService(recipeRepo, invRepo)
+	recipeService := recipe.NewRecipeService(recipeRepo, invService)
 	recipeHandler := recipeapi.NewHandler(recipeService)
+
+	// Batches
+	batchRepo := postgres.NewBatchRepo(db)
+	batchService := batch.NewBatchService(batchRepo, recipeService, invService)
+	batchHandler := batchapi.NewHandler(batchService)
 
 	http.HandleFunc("/recipes", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
@@ -62,6 +70,26 @@ func main() {
 		}
 	})
 
+	http.HandleFunc("/batches", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			var req struct {
+				RecipeID string `json:"recipe_id"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				http.Error(w, "Invalid request body", http.StatusBadRequest)
+				return
+			}
+			b, err := batchHandler.HandleCreateBatch(r.Context(), req.RecipeID)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			json.NewEncoder(w).Encode(b)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
 	http.HandleFunc("/inventory/adjust", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -75,7 +103,7 @@ func main() {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
-		if err := handler.HandleAdjustStock(r.Context(), req.ProductID, req.Amount); err != nil {
+		if err := invService.AdjustStock(r.Context(), req.ProductID, req.Amount); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
