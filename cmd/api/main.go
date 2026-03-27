@@ -12,8 +12,10 @@ import (
 	"sistema-gestion-beer/src/domain/batch"
 	"sistema-gestion-beer/src/domain/inventory"
 	"sistema-gestion-beer/src/domain/recipe"
+	"sistema-gestion-beer/src/domain/scheduling"
 	"sistema-gestion-beer/src/infrastructure/db/postgres"
 	recipeapi "sistema-gestion-beer/src/recipe"
+	schedulingapi "sistema-gestion-beer/src/scheduling"
 )
 
 func main() {
@@ -45,6 +47,12 @@ func main() {
 	batchRepo := postgres.NewBatchRepo(db)
 	batchService := batch.NewBatchService(batchRepo, recipeService, invService)
 	batchHandler := batchapi.NewHandler(batchService)
+
+	// Scheduling
+	tankRepo := postgres.NewTankRepo(db)
+	scheduleRepo := postgres.NewScheduleRepo(db)
+	schedulingService := scheduling.NewSchedulingService(tankRepo, scheduleRepo, invService, recipeService)
+	schedulingHandler := schedulingapi.NewHandler(schedulingService)
 
 	http.HandleFunc("/recipes", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
@@ -85,6 +93,23 @@ func main() {
 				return
 			}
 			json.NewEncoder(w).Encode(b)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	http.HandleFunc("/schedules", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			var req scheduling.Schedule
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				http.Error(w, "Invalid request body", http.StatusBadRequest)
+				return
+			}
+			if err := schedulingHandler.HandleCreateSchedule(r.Context(), &req); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusCreated)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

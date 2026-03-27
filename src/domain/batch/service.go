@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"sistema-gestion-beer/src/domain/inventory"
 	"sistema-gestion-beer/src/domain/recipe"
-	"sistema-gestion-beer/src/inventory"
 )
 
 type BatchService interface {
@@ -18,10 +18,10 @@ type BatchService interface {
 type batchService struct {
 	repo             BatchRepository
 	recipeService    recipe.RecipeService
-	inventoryService inventory.InventoryServiceInterface
+	inventoryService inventory.InventoryService
 }
 
-func NewBatchService(repo BatchRepository, recipeService recipe.RecipeService, inventoryService inventory.InventoryServiceInterface) BatchService {
+func NewBatchService(repo BatchRepository, recipeService recipe.RecipeService, inventoryService inventory.InventoryService) BatchService {
 	return &batchService{
 		repo:             repo,
 		recipeService:    recipeService,
