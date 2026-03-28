@@ -1,0 +1,103 @@
+openapi: 3.0.0
+info:
+  title: Beer Management System API
+  version: 1.0.0
+  description: API para la gestión integral de producción cervecera.
+
+servers:
+  - url: http://localhost:8080
+    description: Servidor de desarrollo local
+
+paths:
+  /inventory/adjust:
+    post:
+      summary: Ajustar stock de inventario
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id, amount]
+              properties:
+                product_id: { type: string, format: uuid }
+                amount: { type: number, format: float }
+      responses:
+        '200': { description: 'Stock ajustado' }
+        '400': { description: 'Error en la solicitud' }
+
+  /recipes:
+    post:
+      summary: Crear nueva receta
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Recipe'
+      responses:
+        '201': { description: 'Receta creada' }
+    get:
+      summary: Listar todas las recetas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Recipe' } }
+
+  /batches:
+    post:
+      summary: Crear nuevo lote de producción
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipe_id]
+              properties:
+                recipe_id: { type: string, format: uuid }
+      responses:
+        '200': { description: 'Lote creado exitosamente' }
+
+  /schedules:
+    post:
+      summary: Agendar producción
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Schedule'
+      responses:
+        '201': { description: 'Programación creada' }
+
+components:
+  schemas:
+    Recipe:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        version: { type: integer }
+        stages:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              order: { type: integer }
+              ingredients:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    product_id: { type: string, format: uuid }
+                    quantity: { type: number, format: float }
+                    unit_of_measure: { type: string }
+    Schedule:
+      type: object
+      properties:
+        tank_id: { type: string, format: uuid }
+        quantity: { type: integer }
+        recipe_id: { type: string, format: uuid }
+        start_time: { type: string, format: date-time }
+        end_time: { type: string, format: date-time }
+        status: { type: string }
